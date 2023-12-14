@@ -1,32 +1,18 @@
 # Smart-Document-Retrieval-System
 
 
-* Document Structure Visualisation 
+* Articles Structure Visualisation 
 ```
-Document
-|
-|-- Title (Autocomplete Search)
-|
-|-- Content
-|   |-- Eliminate stop words, tokens < 3 characters, and HTML
-|   |-- Stem words
-|
-|-- Authors
-|   |-- Array of author objects
-|       |-- First name
-|       |-- Last name
-|       |-- Email
-|
-|-- Date (Publication Date)
-|   |-- Date object
-|
-|-- Geopoint
-|   |-- Longitude
-|   |-- Latitude
-|
-|-- TemporalExpressions
-|   |-- List of temporal expressions
-|
-|-- Georeferences
-    |-- List of georeferenced expressions
+article
+{
+  "date": "YYYY-MM-DD HH:mm:ss",
+  "topics": ["topic1", "topic2", ...],
+  "title": "Article Title",
+  "author": ["author1", "author2", ...],
+  "analized-body": ["term1", "term2", ...],
+  "body": "Main text content of the article.",
+  "temporal-expression": ["time1", "time2", ...],
+  "geopoints": [(latitude1, longitude1), (latitude2, longitude2), ...],   
+  "georeferences": [(latitude1, longitude1), (latitude2, longitude2), ...]
+}
 ``` 
