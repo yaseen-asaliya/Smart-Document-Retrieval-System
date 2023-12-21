@@ -12,7 +12,7 @@ article
   "analized-body": ["term1", "term2", ...],
   "body": "Main text content of the article.",
   "temporal-expression": ["time1", "time2", ...],
-  "geopoints": [(latitude1, longitude1), (latitude2, longitude2), ...],   
-  "georeferences": [(latitude1, longitude1), (latitude2, longitude2), ...]
+  "geopoints": [{"lat": latitude1, "lot": longitude1}, {"lat": latitude2, "lot": longitude2}, ...],   
+  "georeferences": [{"lat": latitude1, "lot": longitude1}, {"lat": latitude2, "lot": longitude2}, ...]
 }
 ``` 
