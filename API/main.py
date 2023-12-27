@@ -1,69 +1,29 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI
 from query_processing import *
-from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
+from pydantic import BaseModel
 
 app = FastAPI()
+es = connect_to_elasticsearch()
 
-# Allow all origins for testing purposes; tighten this in production
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+class SearchRequest(BaseModel):
+    query: str
+    topic: str
+    author: str
+    specific_location: str
 
-@app.get("/search/")
-async def search(query_param: str):
-    return {"titles": ["t1", "t2","t3"]}
+@app.post("/search/")
+def search(request: SearchRequest):
+    json_data = request.dict()
+    return process_a_query(es, json_data["query"], json_data["topic"], extract_author(json_data["author"]), json_data["specific_location"])
 
-@app.get("/test/")
-async def test():
-    return "Done"
+@app.get("/top_ten/")
+def get_top_ten():
+    return get_top_10_georeferences(es)
 
-# In-memory data for demonstration purposes
-fake_data = [
-    {
-        "id": i,
-        "topics": ["topic1", "topic2"],
-        "author": {"firstname": f"Author{i}", "surname": "LastName"},
-        "temporal-expression": "2023-01-01",
-        "geopoints": [{"lat": 40.7128 + i, "lon": -74.0060 + i} for i in range(1, 6)],
-    }
-    for i in range(1, 6)
-]
+@app.get("/dates_distribution/")
+def get_distribution():
+    get_dates_distribution(es)
 
-
-@app.get("/query/")
-async def search_articles(
-    topics: str = Query(None, title="Topics", description="Comma-separated list of topics"),
-    author: str = Query(None, title="Author", description="Author's name"),
-    temporal_expression: str = Query(None, title="Temporal Expression", description="Temporal expression"),
-    geopoint: str = Query(None, title="Geopoint", description="Latitude,Longitude"),
-    page: int = Query(1, title="Page", description="Page number", ge=1),
-    page_size: int = Query(10, title="Page Size", description="Number of items per page", le=100),
-):
-    # Filter the data based on the provided parameters
-    filtered_data = fake_data
-    if topics:
-        filtered_data = [item for item in filtered_data if any(topic in item["topics"] for topic in topics.split(','))]
-    if author:
-        filtered_data = [item for item in filtered_data if author.lower() in f"{item['author']['firstname']} {item['author']['surname']}".lower()]
-    if temporal_expression:
-        filtered_data = [item for item in filtered_data if temporal_expression in item["temporal-expression"]]
-    if geopoint:
-        lat, lon = map(float, geopoint.split(','))
-        filtered_data = [item for item in filtered_data if any(
-            point["lat"] == lat and point["lon"] == lon for point in item["geopoints"]
-        )]
-
-    # Calculate pagination limits
-    start_index = (page - 1) * page_size
-    end_index = start_index + page_size
-
-    # Return paginated data with "title" and "body"
-    return {
-        "data": [{"title": item["title"], "body": item["body"]} for item in filtered_data[start_index:end_index]],
-        "total_items": len(filtered_data),
-    }
-
+if __name__ == "__main__":
+    uvicorn.run(app, host="127.0.0.1", port=8000)
