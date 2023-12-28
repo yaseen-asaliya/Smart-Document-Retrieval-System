@@ -16,3 +16,7 @@ article
   "georeferences": [{"lat": latitude1, "lot": longitude1}, {"lat": latitude2, "lot": longitude2}, ...]
 }
 ``` 
+
+* Articles Distribution
+
+![image](https://raw.githubusercontent.com/yaseen-asaliya/Smart-Document-Retrieval-System/phase_%232/documents_distribution_plot.png)
