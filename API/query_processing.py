@@ -7,14 +7,22 @@ import spacy
 import matplotlib.pyplot as plt
 
 NUMBER_OF_DOCS_TO_RETRIVE = 10
+FIRST_NAME = 0
+SURNAME = 0
+ELASTICSEARCH_PORT_NUMBER = 9200
+ELASTICSEARCH_HOST = 'localhost'
+DEFAULT_LON = 0
+DEFAULT_LAT = 0
+PLACE = 0
+STATE = -1
+COUNTRY = -2
+NUM_OF_DATES_TO_RETRIVE = 10
 
-index_name = "smart_document_system"
+INDEX_NAME = "smart_document_system"
 
 def connect_to_elasticsearch():
-    elasticsearch_host = 'localhost'
-    elasticsearch_port = 9200
 
-    es = Elasticsearch([f'http://{elasticsearch_host}:{elasticsearch_port}'])
+    es = Elasticsearch([f'http://{ELASTICSEARCH_HOST}:{ELASTICSEARCH_PORT_NUMBER}'])
     
     if es.ping():
         print("Connected to Elasticsearch")
@@ -23,25 +31,25 @@ def connect_to_elasticsearch():
         print("Connection to Elasticsearch failed")
 
 
-def get_coordinates(places):
-    list_of_places_corrd = []
+def get_coordinates(place):
+
     try:
-        api_url = "https://nominatim.openstreetmap.org/search?format=json&q=" + "%20".join(places)
+        api_url = "https://nominatim.openstreetmap.org/search?format=json&q=" + place
 
         response = requests.get(api_url)
         data = json.loads(response.text)
 
-        for place in data:
-            if(place['addresstype'] == "city" or place['addresstype'] == "state"):
-                list_of_places_corrd.append({
-                    "lat": place['lat'], 
-                    "lon": place['lon']
-                })
-        return list_of_places_corrd
+
+        if(data['addresstype'] == "city" or data['addresstype'] == "state"):
+           return {
+                "lat": place['lat'], 
+                "lon": place['lon']
+            }
+
     except Exception as e:
         print(f"Failed to retruive corrdinates: {e}")
-        get_coordinates(places)
-    return {"lat": 0, "lon": 0}
+
+    return {"lat": DEFAULT_LAT, "lon": DEFAULT_LON}
 
 
 def extract_temporal_expressions(text, category):
@@ -59,6 +67,7 @@ def get_device_location():
     location_data = response.json()
     return location_data.get('city')
 
+my_location = get_device_location()
 
 def get_place_from_coordinates(latitude, longitude):
     geolocator = Nominatim(user_agent="smart-doc")
@@ -74,34 +83,33 @@ def process_a_query(es, query, topic, author, specific_location):
     temporal_expression =  extract_temporal_expressions(query, "DATE")
     
     if specific_location:
-        geopoint = get_coordinates([specific_location])
+        geopoint = get_coordinates(specific_location)
     else:
-        my_location = [get_device_location()]
         geopoint = get_coordinates(my_location)
 
     query = {
-    "query": {
-        "bool": {
-            "should": [
-                {
-                    "match": {
-                        "analized-body": {
-                            "query": query}
-                        }
-                    },
-                {
-                    "match": {
-                        "title": {
-                            "query": query,
-                            "boost": 2,
-                            "analyzer": "autocomplete"
+        "query": {
+            "bool": {
+                "should": [
+                    {
+                        "match": {
+                            "analized-body": {
+                                "query": query}
+                            }
+                        },
+                    {
+                        "match": {
+                            "title": {
+                                "query": query,
+                                "boost": 2,
+                                "analyzer": "autocomplete"
+                            }
                         }
                     }
-                }
-            ],
-            "filter": []
-        }
-    }}
+                ],
+                "filter": []
+            }
+        }}
 
     if temporal_expression:
         query["query"]["bool"]["should"].append(
@@ -126,19 +134,24 @@ def process_a_query(es, query, topic, author, specific_location):
             
         query["query"]["bool"][type].append(
             {
-            "nested": {
-              "path": "geopoints",
-               "query": {
-                "bool": {
-                "must": [
-                    { "match_all": {} },
-                    { "term": { "geopoints.lat": geopoint[0]['lat'] }},
-                    { "term": { "geopoints.lon": geopoint[0]['lon'] }}
-                    ]
-                    }   
+                "nested": {
+                "path": "geopoints",
+                "query": {
+                        "bool": {
+                        "must": [{ 
+                            "match_all": {} },
+                                { "term": { 
+                                    "geopoints.lat": geopoint['lat'] 
+                                    }},
+                                { 
+                                "term": { 
+                                    "geopoints.lon": geopoint['lon'] 
+                                    }}
+                            ]
+                        }   
+                    }
                 }
-            }
-        })
+            })
        
 
     if topic:
@@ -158,7 +171,7 @@ def process_a_query(es, query, topic, author, specific_location):
                         "should": [
                             {"match": {
                                 "author.firstname": author["firstname"]}
-                             }, {
+                            }, {
                                 "match": {"author.surname": author["surname"]}}
                             ]
                         }
@@ -166,28 +179,32 @@ def process_a_query(es, query, topic, author, specific_location):
                 }
             }
         )
-    
-    response = es.search(index=index_name, body=query, size=NUMBER_OF_DOCS_TO_RETRIVE)
+
+    response = es.search(index=INDEX_NAME, body=query, size=NUMBER_OF_DOCS_TO_RETRIVE)
 
     results = []
     for hit in response["hits"]["hits"]:
         results.append({"title": hit["_source"]["title"]})
-    return results
+
+    unique_results = {tuple(d.items()) for d in results}
+
+    final_results = [dict(t) for t in unique_results]
+
+    return final_results
 
 def extract_author(author_as_text):
     if author_as_text:
         tmp_author = author_as_text.split(" ")
         if len(tmp_author) == 1:
-            return { "firstname": tmp_author[0], "surname": "" }
+            return { "firstname": tmp_author[FIRST_NAME], "surname": "" }
         else:
-            return { "firstname": tmp_author[0], "surname": tmp_author[1] }
+            return { "firstname": tmp_author[FIRST_NAME], "surname": tmp_author[SURNAME] }
     else:
         return {}
     
-    
 def analyze_address(address):
     address = address.split(",")
-    return  (address[0] + "," + address[-1]).strip()
+    return  (address[PLACE] + "," + address[COUNTRY] + "," + address[STATE]).strip()
     
 def get_top_10_georeferences(es):
     
@@ -219,7 +236,7 @@ def get_top_10_georeferences(es):
             }
         }
     }
-    response = es.search(index=index_name, body=query, size=NUMBER_OF_DOCS_TO_RETRIVE+1)
+    response = es.search(index=INDEX_NAME, body=query, size=NUMBER_OF_DOCS_TO_RETRIVE+1)
     
     places_names = []
     lon_path = response["aggregations"]["top_10_georeferences"]["most_occurrence_longitudes"]["buckets"]
@@ -245,9 +262,9 @@ def get_dates_distribution(es):
         }
     }
     
-    response = es.search(index=index_name, body=query)
+    response = es.search(index=INDEX_NAME, body=query)
 
-    dates = [article["key_as_string"][:10] for article in response["aggregations"]["dates"]["buckets"]]
+    dates = [article["key_as_string"][:NUM_OF_DATES_TO_RETRIVE] for article in response["aggregations"]["dates"]["buckets"]]
     doc_counts = [article["doc_count"] for article in response["aggregations"]["dates"]["buckets"]]
 
     plt.figure(figsize=(10, 6))
