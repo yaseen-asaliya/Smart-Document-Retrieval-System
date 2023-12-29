@@ -4,6 +4,7 @@ import uvicorn
 from pydantic import BaseModel
 
 app = FastAPI()
+
 es = connect_to_elasticsearch()
 
 class SearchRequest(BaseModel):
@@ -23,7 +24,7 @@ def get_top_ten():
 
 @app.get("/dates_distribution/")
 def get_distribution():
-    get_dates_distribution(es)
+    return get_dates_distribution(es)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
