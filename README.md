@@ -29,7 +29,69 @@ article_1
   "georeferences": [{"lat": latitude1, "lot": longitude1}, {"lat": latitude2, "lot": longitude2}, ...]
 }
 ``` 
+* Index Mapping and Setting 
+```
+index_mapping = {
+    "mappings": {
+        "properties": {
+            "date": {"type": "date"},
+            "topics": {"type": "keyword"},
+            "title": {"type": "text", "analyzer": "autocomplete", "search_analyzer": "autocomplete_search"},
+            "author": {
+                "type": "nested",
+                "properties": {
+                    "firstname": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
+                    "surname": {"type": "text", "fields": {"keyword": {"type": "keyword"}}}
+                }
+            },
+            "analized-body": {"type": "text"},
+            "body": {"type": "text"},
+            "temporal-expression": {
+                "type": "nested",
+                "properties": {
+                    "expression": {"type": "text"}
+                }
+            },
+            "geopoints": {
+                "type": "nested",
+                "properties": {
+                    "lon": {"type": "double"},
+                    "lat": {"type": "double"}
+                }
+            },
+            "georeferences": {
+                "type": "nested",
+                "properties": {
+                    "lon": {"type": "double"},
+                    "lat": {"type": "double"}
+                }
+            }
+        }
+    },
+    "settings": {
+        "analysis": {
+            "analyzer": {
+                "autocomplete": {
+                    "tokenizer": "autocomplete",
+                    "filter": ["lowercase"]
+                },
+                "autocomplete_search": {
+                    "tokenizer": "lowercase"
+                }
+            },
+            "tokenizer": {
+                "autocomplete": {
+                    "type": "edge_ngram",
+                    "min_gram": 3,
+                    "max_gram": 10,
+                    "token_chars": ["letter", "digit"]
+                }
+            }
+        }
+    }
+}
 
+```
 * Articles Dates Distribution 
 > This image was generated using an API from the applications.
 
