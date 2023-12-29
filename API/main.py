@@ -2,8 +2,20 @@ from fastapi import FastAPI
 from query_processing import *
 import uvicorn
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+# Configure CORS
+origins = ["*"]  # Adjust this to your actual frontend origin(s)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 es = connect_to_elasticsearch()
 
 class SearchRequest(BaseModel):

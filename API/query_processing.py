@@ -16,7 +16,7 @@ DEFAULT_LAT = 0
 PLACE = 0
 STATE = -1
 COUNTRY = -2
-NUM_OF_DATES_TO_RETRIVE = 10
+DATE_LAST_DIGIT = 10
 
 INDEX_NAME = "smart_document_system"
 
@@ -264,7 +264,7 @@ def get_dates_distribution(es):
     
     response = es.search(index=INDEX_NAME, body=query)
 
-    dates = [article["key_as_string"][:NUM_OF_DATES_TO_RETRIVE] for article in response["aggregations"]["dates"]["buckets"]]
+    dates = [article["key_as_string"][:DATE_LAST_DIGIT] for article in response["aggregations"]["dates"]["buckets"]]
     doc_counts = [article["doc_count"] for article in response["aggregations"]["dates"]["buckets"]]
 
     plt.figure(figsize=(10, 6))
