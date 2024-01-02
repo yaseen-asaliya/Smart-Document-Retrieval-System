@@ -39,12 +39,12 @@ def get_coordinates(place):
         response = requests.get(api_url)
         data = json.loads(response.text)
 
-
-        if(data['addresstype'] == "city" or data['addresstype'] == "state"):
-           return {
-                "lat": place['lat'], 
-                "lon": place['lon']
-            }
+        for item in data:
+            if(item['addresstype'] == "city" or item['addresstype'] == "state" or item['addresstype'] == "country"):
+                return {
+                        "lat": item['lat'], 
+                        "lon": item['lon']
+                    }
 
     except Exception as e:
         print(f"Failed to retruive corrdinates: {e}")
@@ -94,14 +94,15 @@ def process_a_query(es, query, topic, author, specific_location):
                     {
                         "match": {
                             "analized-body": {
-                                "query": query}
+                                "query": query
+                                }
                             }
                         },
                     {
                         "match": {
                             "title": {
                                 "query": query,
-                                "boost": 2,
+                                "boost": 3,
                                 "analyzer": "autocomplete"
                             }
                         }
@@ -179,7 +180,7 @@ def process_a_query(es, query, topic, author, specific_location):
                 }
             }
         )
-
+    print(query)
     response = es.search(index=INDEX_NAME, body=query, size=NUMBER_OF_DOCS_TO_RETRIVE)
 
     results = []
