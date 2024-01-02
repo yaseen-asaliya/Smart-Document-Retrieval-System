@@ -103,7 +103,6 @@ def process_a_query(es, query, topic, author, specific_location):
                             "title": {
                                 "query": query,
                                 "boost": 3,
-                                "analyzer": "autocomplete"
                             }
                         }
                     }
