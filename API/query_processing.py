@@ -17,7 +17,8 @@ PLACE = 0
 STATE = -1
 COUNTRY = -2
 DATE_LAST_DIGIT = 10
-
+SKIP_ZERO_LON = 1
+SKIP_ZERO_LAT = 1
 INDEX_NAME = "smart_document_system"
 
 def connect_to_elasticsearch():
@@ -242,7 +243,7 @@ def get_top_10_georeferences(es):
     lon_path = response["aggregations"]["top_10_georeferences"]["most_occurrence_longitudes"]["buckets"]
     lat_path = response["aggregations"]["top_10_georeferences"]["most_occurrence_latitudes"]["buckets"]
     
-    for lon_bucket, lat_bucket in zip(lon_path[1:], lat_path[1:]):
+    for lon_bucket, lat_bucket in zip(lon_path[SKIP_ZERO_LON:], lat_path[SKIP_ZERO_LAT:]):
         coords = get_place_from_coordinates(lat_bucket["key"], lon_bucket["key"])
         places_names.append(analyze_address(coords))
     
