@@ -2,7 +2,7 @@
 
 Smart document retrieval system, a powerful tool implemented using the FastAPI framework with Python. This system empowers users to tailor their searches based on specific criteria such as article location, author, and topic.
 
-> Applcation interface
+> Application interface
 
 ![image](https://github.com/yaseen-asaliya/Smart-Document-Retrieval-System/assets/59315877/5cc89f26-4cae-4963-90e7-a92f28c763d5)
 
